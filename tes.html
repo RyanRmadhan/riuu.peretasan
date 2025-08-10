@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>PERETASAN BERHASIL — Demo UI</title>
+<style>
+  :root{
+    --bg:#060606;
+    --panel:#0b0b0b;
+    --accent:#e11b1b; /* red border */
+    --neon:#22c55e; /* green text */
+    --muted:#2c2c2c;
+    --glass: rgba(255,255,255,0.03);
+    --mono: "Courier New", Courier, monospace;
+  }
+
+  html,body{
+    height:100%;
+    margin:0;
+    font-family: var(--mono);
+    background:
+      radial-gradient(ellipse at 70% 20%, rgba(34,197,94,0.03), transparent 10%),
+      linear-gradient(180deg,#020202 0%, #060808 100%);
+    color:var(--neon);
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
+
+  .wrap{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:18px;
+    padding:20px;
+    height:100vh;
+    box-sizing:border-box;
+  }
+
+  /* big center overlay like image */
+  .center-popup{
+    position:fixed;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+    width:640px;
+    max-width:92%;
+    background: linear-gradient(180deg, rgba(0,0,0,0.9), rgba(10,10,10,0.98));
+    border:6px solid var(--accent);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+    z-index:60;
+    text-align:center;
+    padding:28px 26px;
+  }
+  .center-popup h1{
+    margin:0;
+    font-size:34px;
+    color:var(--neon);
+    letter-spacing:2px;
+  }
+  .center-popup p{ margin:10px 0 18px; color: #9fe7a8; }
+  .progress{
+    display:flex;
+    gap:8px;
+    justify-content:center;
+    align-items:center;
+    margin-top:6px;
+  }
+  .progress .bar{
+    width:18px;
+    height:18px;
+    background:linear-gradient(180deg,#2b2b2b,#111);
+    box-shadow: inset 0 0 6px rgba(0,0,0,0.6);
+    border-radius:3px;
+    opacity:0.25;
+    animation: blink 1.4s infinite;
+  }
+  .progress .bar:nth-child(odd){ animation-delay: 0.1s; }
+  .progress .bar:nth-child(2){ animation-delay: 0.15s; }
+  .progress .bar:nth-child(3){ animation-delay: 0.2s; }
+  .progress .bar:nth-child(4){ animation-delay: 0.25s; }
+  .progress .bar:nth-child(5){ animation-delay: 0.3s; }
+  .progress .bar:nth-child(6){ animation-delay: 0.35s; }
+  .progress .bar:nth-child(7){ animation-delay: 0.4s; }
+  .progress .bar:nth-child(8){ animation-delay: 0.45s; }
+  .progress .bar:nth-child(9){ animation-delay: 0.5s; }
+  .progress .bar:nth-child(10){ animation-delay: 0.55s; }
+  .progress .bar.active{ opacity:1; background: linear-gradient(180deg,#1fff6b,#12a83f); box-shadow:0 0 8px rgba(34,197,94,0.6); }
+
+  @keyframes blink {
+    0%{ opacity:0.15; transform: translateY(0); }
+    50%{ opacity:1; transform: translateY(-4px); }
+    100%{ opacity:0.15; transform: translateY(0); }
+  }
+
+  /* left column panels */
+  .panel{
+    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border:4px solid var(--accent);
+    padding:14px;
+    box-sizing:border-box;
+    color:var(--neon);
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+
+  .topbar{
+    display:flex;
+    gap:10px;
+    align-items:center;
+  }
+  .topbar .title{
+    font-weight:700;
+    color:var(--neon);
+    font-size:14px;
+  }
+  .field{
+    background: linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.1));
+    padding:10px;
+    border-radius:6px;
+    border:1px solid rgba(255,255,255,0.03);
+    font-size:13px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
+  }
+  .input{
+    background:transparent;
+    color:var(--neon);
+    border:none;
+    outline:none;
+    width:100%;
+    font-family:var(--mono);
+    font-size:14px;
+  }
+  .method{
+    display:flex;
+    gap:8px;
+  }
+  .method button{
+    background:transparent;
+    color:#8bf8a6;
+    border:1px solid rgba(139,248,166,0.12);
+    padding:6px 8px;
+    border-radius:4px;
+    cursor:pointer;
+    font-family:var(--mono);
+  }
+
+  /* map placeholder */
+  .map{
+    background: linear-gradient(180deg,#04110b,#04110b);
+    border:2px solid rgba(34,197,94,0.06);
+    height:220px;
+    border-radius:4px;
+    position:relative;
+    overflow:hidden;
+  }
+  /* map grid effect */
+  .map:before{
+    content:"";
+    position:absolute; inset:0;
+    background-image: linear-gradient(rgba(255,255,255,0.01) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.01) 1px, transparent 1px);
+    background-size: 40px 40px;
+    mix-blend-mode:overlay;
+    pointer-events:none;
+  }
+  .map .dot{
+    position:absolute;
+    width:14px;height:14px;border-radius:50%;
+    background: radial-gradient(circle at 35% 30%, #9fffb1, #16a34a);
+    box-shadow:0 0 14px rgba(34,197,94,0.6), inset 0 -2px 6px rgba(0,0,0,0.6);
+    transform: translate(-50%,-50%);
+  }
+  .dot.pulse{ animation: pulse 1.6s infinite; }
+  @keyframes pulse{
+    0%{ box-shadow:0 0 6px rgba(34,197,94,0.5) }
+    50%{ box-shadow:0 0 18px rgba(34,197,94,0.9) }
+    100%{ box-shadow:0 0 6px rgba(34,197,94,0.5) }
+  }
+
+  /* right column panels */
+  .console{
+    background:linear-gradient(180deg,#020202,#0b0b0b);
+    border:4px solid var(--accent);
+    padding:12px;
+    min-height: 100%;
+    overflow:auto;
+    font-size:13px;
+    line-height:1.5;
+  }
+  .console .line{ color:#9fe7a8; white-space:pre-wrap; font-family:var(--mono); }
+  .small{
+    font-size:12px;
+    color: #a6f3b6;
+  }
+
+  /* footer stats */
+  .stats{
+    display:flex;
+    gap:10px;
+    margin-top:auto;
+  }
+  .stat{
+    background:var(--glass);
+    padding:10px;
+    border-radius:6px;
+    border:1px solid rgba(255,255,255,0.02);
+    font-size:12px;
+    flex:1;
+  }
+
+  /* responsive */
+  @media (max-width:900px){
+    .wrap{ grid-template-columns: 1fr; padding:12px; gap:12px;}
+  }
+
+  /* decorative top-right corner code column */
+  .code-col{
+    background:linear-gradient(180deg,rgba(255,255,255,0.01),rgba(255,255,255,0.00));
+    border:3px solid var(--accent);
+    padding:12px;
+    color:#9fe7a8;
+    font-size:12px;
+    height:100%;
+    box-sizing:border-box;
+    overflow:auto;
+    display:flex;
+    flex-direction:column;
+  }
+  .small-title{ color:#a6f3b6; font-weight:700; margin-bottom:8px; }
+
+  /* subtle matrix background lines */
+  .matrix{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    opacity:0.03;
+    background-image:
+      radial-gradient(circle at 10% 20%, #00ff6a 1px, transparent 2px),
+      linear-gradient(90deg, rgba(0,255,102,0.02) 1px, transparent 1px);
+    background-size: 120px 120px, 1px 100%;
+  }
+</style>
+</head>
+<body>
+  <div class="matrix"></div>
+
+  <div class="wrap">
+    <!-- LEFT TOP -->
+    <div class="panel">
+      <div class="topbar">
+        <div class="title">Tracing Contact</div>
+      </div>
+
+      <div class="field">
+        <div style="display:flex;gap:10px;align-items:center;">
+          <label style="min-width:140px;color:#bff5c9;">Killer's IP Address:</label>
+          <div style="flex:1;display:flex;">
+            <input class="input" id="ipField" value="205.211.157.84" />
+          </div>
+        </div>
+        <div style="height:10px"></div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <label style="min-width:140px;color:#bff5c9;">Method:</label>
+          <div class="method">
+            <button id="btnIp">IP_ADDRESS</button>
+            <button id="btnHost">HOST_NAME</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="map" id="map">
+        <!-- static dots on positions -->
+        <div class="dot pulse" style="left:24%;top:62%"></div>
+        <div class="dot pulse" style="left:38%;top:54%"></div>
+        <div class="dot" style="left:58%;top:45%"></div>
+        <div class="dot" style="left:78%;top:32%"></div>
+        <div class="dot" style="left:12%;top:45%"></div>
+      </div>
+
+      <div style="display:flex;gap:10px;">
+        <div class="field" style="flex:1;">
+          <div class="small-title">Total Aset (Rp)</div>
+          <div style="font-size:18px;color:#c6ffda">0.00</div>
+        </div>
+        <div class="field" style="width:120px;display:flex;align-items:center;justify-content:center;">
+          <button style="background:transparent;border:1px solid rgba(255,255,255,0.03);color:#ffefef;padding:8px 10px;border-radius:6px;cursor:pointer;" id="deposit">Deposit</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT TOP -->
+    <div class="code-col">
+      <div class="small-title">Password Decryptor</div>
+      <div class="console" id="consoleLog" style="height:300px;">
+        <!-- lines appended by JS -->
+      </div>
+
+      <div style="height:12px"></div>
+
+      <div style="display:flex;gap:10px;">
+        <div style="flex:1;">
+          <div class="small-title">Realtime Stats</div>
+          <div class="stat small">Keys tested: <span id="keys">0</span></div>
+        </div>
+        <div style="width:160px;">
+          <div class="small-title">Current passphrase</div>
+          <div class="field small" id="pass">V2dya3q</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- LEFT BOTTOM (full width) -->
+    <div class="panel" style="grid-column:1 / span 2; min-height:220px;">
+      <div style="display:flex;gap:12px;">
+        <div style="flex:1;">
+          <div class="small-title">Activity Feed</div>
+          <div class="console" id="activity" style="height:140px; overflow:auto; background: linear-gradient(180deg,#050505,#0b0b0b); border:1px solid rgba(255,255,255,0.02);"></div>
+        </div>
+        <div style="width:320px;">
+          <div class="small-title">Control</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <button id="startBtn" style="padding:10px;background:var(--accent);border:none;color:#fff;border-radius:6px;cursor:pointer;font-weight:700;">START HACK</button>
+            <button id="stopBtn" style="padding:10px;background:#333;border:none;color:var(--neon);border-radius:6px;cursor:pointer;">STOP</button>
+            <div style="margin-top:6px;">
+              <label class="small">Speed</label>
+              <input id="speed" type="range" min="50" max="1500" value="400" style="width:100%;">
+            </div>
+          </div>
+        </div>
+      </div>
+
+<div class="panel" style="grid-column:1 / span 2; min-height:220px;">
+  <div style="display:flex;gap:12px;">
+    <div style="flex:1;">
+     
+    
+
+    <div style="width:320px;">
+      <div class="panel map-panel" style="position:relative; border:1px solid rgba(255,255,255,0.05); background:#000;">
+        <img src="img/tes1.jpg" 
+             alt="Map of Cambodia" 
+             style="width:100%; height:auto; display:block; filter: drop-shadow(0 0 6px #0f0);">
+        <div class="target" style="
+          position:absolute;
+          top:50%;
+          left:50%;
+          width:14px;
+          height:14px;
+          background:red;
+          border-radius:50%;
+          transform: translate(-50%, -50%);
+          box-shadow: 0 0 10px red;
+          animation: pulse 1.5s infinite;
+        "></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats" style="margin-top:12px;">
+    <div class="stat">Status: <strong id="statusText">Idle</strong></div>
+    <div class="stat">Packets Sent: <span id="packets">0</span></div>
+    <div class="stat">Last Contact: <span id="lastContact">-</span></div>
+  </div>
+</div>
+
+
+
+
+      <div class="stats" style="margin-top:12px;">
+        <div class="stat">Status: <strong id="statusText">Idle</strong></div>
+        <div class="stat">Packets Sent: <span id="packets">0</span></div>
+        <div class="stat">Last Contact: <span id="lastContact">-</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- center popup -->
+  <div class="center-popup" id="center">
+    <h1>PERETASAN BERHASIL</h1>
+    <p>Currently Sending...</p>
+    <div class="progress" id="progressRow">
+      <!-- many bars appended by JS -->
+    </div>
+  </div>
+
+<script>
+/*
+  This is a purely cosmetic demo. It does NOT perform networking, tracing,
+  password cracking, or any real hacking. It only fakes logs and animations.
+*/
+
+const consoleLog = document.getElementById('consoleLog');
+const activity = document.getElementById('activity');
+const keysSpan = document.getElementById('keys');
+const passField = document.getElementById('pass');
+const statusText = document.getElementById('statusText');
+const packets = document.getElementById('packets');
+const lastContact = document.getElementById('lastContact');
+const startBtn = document.getElementById('startBtn');
+const stopBtn = document.getElementById('stopBtn');
+const speedSlider = document.getElementById('speed');
+const center = document.getElementById('center');
+const ipField = document.getElementById('ipField');
+
+let running = false;
+let intervalId = null;
+let keyCount = 0;
+let packetCount = 0;
+
+// build progress bars
+const progressRow = document.getElementById('progressRow');
+for(let i=0;i<24;i++){
+  const b = document.createElement('div');
+  b.className = 'bar';
+  if(i % 3 === 0) b.classList.add('active');
+  progressRow.appendChild(b);
+}
+
+// helper for fake log lines
+function addConsoleLine(text, color){
+  const el = document.createElement('div');
+  el.className = 'line';
+  el.style.color = color || '#9fe7a8';
+  el.textContent = text;
+  consoleLog.appendChild(el);
+  consoleLog.scrollTop = consoleLog.scrollHeight;
+}
+
+function addActivity(text){
+  const el = document.createElement('div');
+  el.className = 'line';
+  el.textContent = `[${new Date().toLocaleTimeString()}] ${text}`;
+  activity.appendChild(el);
+  activity.scrollTop = activity.scrollHeight;
+}
+
+// random generator
+function rndWord(len=6){
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let s='';
+  for(let i=0;i<len;i++) s+=chars[Math.floor(Math.random()*chars.length)];
+  return s;
+}
+
+// start fake process
+function startFake(){
+  if(running) return;
+  running=true;
+  statusText.textContent = 'Running';
+  addActivity('Process started: injecting payload into endpoint ' + ipField.value);
+  addConsoleLine('Initializing Password Decryptor...');
+  addConsoleLine('Calculating Hashes...', '#b2ffb8');
+
+  intervalId = setInterval(()=>{
+    // update keys tested
+    keyCount += Math.floor(Math.random()*12 + 4);
+    packetCount += Math.floor(Math.random()*8 + 1);
+    keysSpan.textContent = keyCount.toLocaleString();
+    packets.textContent = packetCount.toLocaleString();
+    lastContact.textContent = new Date().toLocaleTimeString();
+
+    // update pass sample occasionally
+    if(Math.random() > 0.7){
+      passField.textContent = rndWord(7);
+    }
+
+    // emit console lines
+    const sampleLines = [
+      'Connecting to relay node ' + (100 + Math.floor(Math.random()*150)) + '...',
+      'Master key: ' + rndWord(32),
+      'Decrypt attempt: ' + rndWord(10),
+      'Recursing job queue...',
+      'Sending packet to ' + ipField.value + ' via proxy ' + rndWord(6),
+      'Handshake OK. TLS negotiated.',
+      'Writing to temporary buffer...',
+      'Stored 0x' + Math.floor(Math.random()*0xFFFFFF).toString(16)
+    ];
+    let ln = sampleLines[Math.floor(Math.random()*sampleLines.length)];
+    addConsoleLine(ln, '#aaf7bf');
+
+    // activity
+    if(Math.random() > 0.85){
+      addActivity('Data fragment sent to remote endpoint (chunk size ' + (100+Math.floor(Math.random()*900)) + 'KB)');
+    }
+
+    // animate progress bars
+    const bars = document.querySelectorAll('.progress .bar');
+    bars.forEach((b,i)=>{
+      const active = Math.random() > 0.6;
+      b.classList.toggle('active', active);
+    });
+
+  }, Math.max(80, Number(speedSlider.value)));
+
+  // center popup animation pulsate
+  center.style.transform = 'translate(-50%,-50%) scale(1.02)';
+  setTimeout(()=> center.style.transform = 'translate(-50%,-50%) scale(1)', 300);
+
+  addActivity('PERETASAN BERHASIL UI engaged.');
+}
+
+function stopFake(){
+  if(!running) return;
+  running=false;
+  if(intervalId) clearInterval(intervalId);
+  statusText.textContent = 'Stopped';
+  addActivity('Process stopped by operator.');
+  addConsoleLine('Session terminated.', '#f7c6c6');
+}
+
+// init with some lines
+addConsoleLine('Booting fake decryptor environment...', '#9fe7a8');
+addConsoleLine('Loading modules: [TracingContact] [PasswordDecryptor] [MapVisualizer] ...', '#9fe7a8');
+addConsoleLine('Ready.', '#9fe7a8');
+addActivity('UI ready. Press START HACK to simulate.');
+
+startBtn.addEventListener('click', startFake);
+stopBtn.addEventListener('click', stopFake);
+
+// keyboard quick toggle
+document.addEventListener('keydown', (e)=>{
+  if(e.key.toLowerCase() === 's') startFake();
+  if(e.key.toLowerCase() === 'x') stopFake();
+});
+
+// small UX: click map dot to log a contact
+document.querySelectorAll('.map .dot').forEach((d,i)=>{
+  d.addEventListener('click', ()=>{
+    addActivity('Target pinged at map node #' + (i+1));
+    addConsoleLine('Traceroute hop ' + (i+1) + ': 192.168.' + (10+i) + '.1', '#d0f7d0');
+    // quick pulse
+    d.style.transform = 'translate(-50%,-50%) scale(1.15)';
+    setTimeout(()=> d.style.transform = 'translate(-50%,-50%) scale(1)', 220);
+  });
+});
+
+// small responsive tip: hide center after 20s to reveal logs
+setTimeout(()=> {
+  center.style.opacity = 0.95;
+}, 100);
+setTimeout(()=> {
+  center.style.opacity = 0.0;
+  center.style.transition = 'opacity 1s ease';
+  setTimeout(()=> center.style.display = 'none', 1100);
+}, 22000);
+
+// safety note appended to activity (visible in UI)
+addActivity('NOTE: This interface is visual only — no network activity is performed.');
+
+</script>
+</body>
+</html>
